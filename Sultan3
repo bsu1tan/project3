@@ -1,0 +1,177 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+// Интерфейс для книги
+interface Book {
+    String getTitle();
+    String getAuthor();
+}
+
+// Реализация книги
+class SimpleBook implements Book {
+    private String title;
+    private String author;
+
+    public SimpleBook(String title, String author) {
+        this.title = title;
+        this.author = author;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
+    }
+
+    @Override
+    public String getAuthor() {
+        return author;
+    }
+}
+
+// Интерфейс для библиотеки
+interface Library {
+    void addBook(Book book);
+    void removeBook(Book book);
+    List<Book> getBooks();
+}
+
+// Реализация библиотеки
+class SimpleLibrary implements Library {
+    private List<Book> books = new ArrayList<>();
+
+    @Override
+    public void addBook(Book book) {
+        books.add(book);
+    }
+
+    @Override
+    public void removeBook(Book book) {
+        books.remove(book);
+    }
+
+    @Override
+    public List<Book> getBooks() {
+        return books;
+    }
+}
+
+// Адаптер для библиотеки, который позволяет взаимодействовать с библиотекой через старый интерфейс
+class LibraryAdapter implements Library {
+    private OldLibrary oldLibrary;
+
+    public LibraryAdapter(OldLibrary oldLibrary) {
+        this.oldLibrary = oldLibrary;
+    }
+
+    @Override
+    public void addBook(Book book) {
+        oldLibrary.insertBook(book.getTitle(), book.getAuthor());
+    }
+
+    @Override
+    public void removeBook(Book book) {
+        oldLibrary.removeBook(book.getTitle());
+    }
+
+    @Override
+    public List<Book> getBooks() {
+        List<OldBook> oldBooks = oldLibrary.getAllBooks();
+        List<Book> books = new ArrayList<>();
+        for (OldBook oldBook : oldBooks) {
+            books.add(new SimpleBook(oldBook.getTitle(), oldBook.getAuthor()));
+        }
+        return books;
+    }
+}
+
+// Старый интерфейс библиотеки
+class OldLibrary {
+    private List<OldBook> oldBooks = new ArrayList<>();
+
+    public void insertBook(String title, String author) {
+        oldBooks.add(new OldBook(title, author));
+    }
+
+    public void removeBook(String title) {
+        for (OldBook book : oldBooks) {
+            if (book.getTitle().equals(title)) {
+                oldBooks.remove(book);
+                break;
+            }
+        }
+    }
+
+    public List<OldBook> getAllBooks() {
+        return oldBooks;
+    }
+}
+
+// Старый интерфейс для книги
+class OldBook {
+    private String title;
+    private String author;
+
+    public OldBook(String title, String author) {
+        this.title = title;
+        this.author = author;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        OldLibrary oldLibrary = new OldLibrary();
+        Library library = new LibraryAdapter(oldLibrary);
+
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("1. Add book");
+            System.out.println("2. Remove book");
+            System.out.println("3. List books");
+            System.out.println("4. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter book title: ");
+                    String title = scanner.next();
+                    System.out.print("Enter book author: ");
+                    String author = scanner.next();
+                    Book newBook = new SimpleBook(title, author);
+                    library.addBook(newBook);
+                    break;
+                case 2:
+                    System.out.print("Enter book title to remove: ");
+                    String bookTitle = scanner.next();
+                    for (Book book : library.getBooks()) {
+                        if (book.getTitle().equals(bookTitle)) {
+                            library.removeBook(book);
+                            break;
+                        }
+                    }
+                    break;
+                case 3:
+                    List<Book> books = library.getBooks();
+                    for (Book book : books) {
+                        System.out.println("Title: " + book.getTitle() + ", Author: " + book.getAuthor());
+                    }
+                    break;
+                case 4:
+                    scanner.close();
+                    System.exit(0);
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+}
